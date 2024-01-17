@@ -19,119 +19,83 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
+//
 void SystemClock_Config(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
+void mydelay(int count);
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+// turns on clock to GPIO banks A and C
+RCC->AHB2ENR |= (RCC_AHB2ENR_GPIOAEN | RCC_AHB2ENR_GPIOCEN);
 
-  /* Initialize all configured peripherals */
-  /* USER CODE BEGIN 2 */
+// bank A as GPIO mode
+GPIOA->MODER &= ~(GPIO_MODER_MODE4); //input mode
+GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPD4); //clears pull up
+GPIOA->PUPDR |= (0x1 << 8); //sets pull up
 
-  // turns on clock to GPIO banks A and C
-  RCC->AHB2ENR |= (RCC_AHB2ENR_GPIOAEN | RCC_AHB2ENR_GPIOCEN);
 
-  // bank A as GPIO mode (PA4)
-  GPIOA->MODER &= ~(GPIO_MODER_MODE5);
-  GPIOA->MODER |= (GPIO_MODER_MODE5_0);
+// bank C as GPIO mode
+GPIOC->MODER &= ~(0x3F); //3F is all 11111 clears all pins 0 1 2
+GPIOC->MODER |= (0x15);
 
-  // bank C as GPIO mode
-  GPIOC->MODER &= ~(GPIO_MODER_MODE13);
-  GPIOC->PUPDR &= ~(GPIO_PUPDR_PUPD13);
-
-  // Enable pull ups
-  GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPD4);
-  GPIOA->PUPDR |= (0x1 << 8);
-
-  // Set PC0, PC1, and PC2 as output mode
-  GPIOC->MODER &= ~(GPIO_MODER_MODER0 | GPIO_MODER_MODER1 | GPIO_MODER_MODER2); // Clear mode bits for PC0, PC1, PC2
-  GPIOC->MODER |= (GPIO_MODER_MODER0_0 | GPIO_MODER_MODER1_0 | GPIO_MODER_MODER2_0);
-
-  // Set initial output state to low (LEDs off)
-  GPIOC->ODR &= ~(GPIO_ODR_ODR_0 | GPIO_ODR_ODR_1 | GPIO_ODR_ODR_2);
-
-  // Set PA4 as input mode
-  GPIOA->MODER &= ~(GPIO_MODER_MODER4);
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-
-  int count = 0;
-
-  while (1)
+   while (1)
   {
+  	if(!(GPIOA->IDR & (1<<4)))
+	{
+	   	  clearLight();
+		  mydelay(1000);
+	      GPIOC->ODR |= (0x1); // set pins of PORT C to 1
+	      mydelay(500);
+	      clearLight();
+	      mydelay(500);
+	      GPIOC->ODR |= (0x2); // set pins of PORT C to 2
+	      mydelay(500);
+	      clearLight();
+	      mydelay(500);
+	      GPIOC->ODR |= (0x3);
+	      mydelay(500);
+	      clearLight();
+	      mydelay(500);
+	      GPIOC->ODR |= (0x4); // set pins of PORT C to 4
+	      mydelay(500);
+	      clearLight();
+	      mydelay(500);
+	      GPIOC->ODR |= (0x5);
+	      mydelay(500);
+	      clearLight();
+	      mydelay(500);
+	      GPIOC->ODR |= (0x6);
+	      mydelay(500);
+	      clearLight();
+	      mydelay(500);
+	      GPIOC->ODR |= (0x7);
+	      mydelay(500);
+	}
+	else
+	{
+	     clearLight();
+	}
+}
 
-	  // If pulled low, count
-	  if ((GPIOA->IDR & GPIO_IDR_ID4) == 0) {
-	        GPIOC->ODR = (count & 0x07);
-			HAL_Delay(500);
-	        count = (count + 1) % 8; // Increment count and wrap around at 7
-	  }
-	  // If pulled low, blink the LEDS
-	  else {
-		  HAL_Delay(500);
-	  }
 
-  }
+
+
+}// end main
+
+void clearLight()
+{
+	GPIOC->ODR &= ~(0x7);
+}
+void mydelay(int count)
+{
+	int i, j;
+	int x = 0;
+	for(i=0; i<count; i++)
+		for(j=0; j<1000; j++)  // need to tune this?
+			x = x + 1;
 }
 
 /**
@@ -149,20 +113,32 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+  //RCC_OscInitStruct.MSIState = RCC_MSI_ON;  //datasheet says NOT to turn on the MSI then change the frequency.
   RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_7;
+	/* from stm32l4xx_hal_rcc.h==
+	#define RCC_MSIRANGE_0                 MSI = 100 KHz
+	#define RCC_MSIRANGE_1                 MSI = 200 KHz
+	#define RCC_MSIRANGE_2                 MSI = 400 KHz
+	#define RCC_MSIRANGE_3                 MSI = 800 KHz
+	#define RCC_MSIRANGE_4                 MSI = 1 MHz
+	#define RCC_MSIRANGE_5                 MSI = 2 MHz
+	#define RCC_MSIRANGE_6                 MSI = 4 MHz
+	#define RCC_MSIRANGE_7                 MSI = 8 MHz
+	#define RCC_MSIRANGE_8                 MSI = 16 MHz
+	#define RCC_MSIRANGE_9                 MSI = 24 MHz
+	#define RCC_MSIRANGE_10                MSI = 32 MHz
+	#define RCC_MSIRANGE_11                MSI = 48 MHz   dont use this one*/
+  RCC_OscInitStruct.MSIState = RCC_MSI_ON;  //datasheet says NOT to turn on the MSI then change the frequency.
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
-
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -213,3 +189,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
